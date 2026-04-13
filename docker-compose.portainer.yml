@@ -1,0 +1,32 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: twitter-search-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PORT=8787
+    volumes:
+      - ./saved-users.json:/app/saved-users.json
+    networks:
+      - twitter-search-net
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: twitter-search-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+    networks:
+      - twitter-search-net
+
+networks:
+  twitter-search-net:
+    driver: bridge
