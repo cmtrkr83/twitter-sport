@@ -9,8 +9,9 @@ services:
       - .env
     environment:
       - PORT=8787
+      - SAVED_USERS_FILE_PATH=/data/saved-users.json
     volumes:
-      - ./saved-users.json:/app/saved-users.json
+      - twitter-search-data:/data
     networks:
       - twitter-search-net
 
@@ -30,3 +31,7 @@ services:
 networks:
   twitter-search-net:
     driver: bridge
+
+volumes:
+  twitter-search-data:
+    driver: local

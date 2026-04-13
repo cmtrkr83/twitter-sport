@@ -26,7 +26,7 @@ Eklenen dosyalar:
 - `Dockerfile.api`: Node API servisi (`server.mjs`) icin image.
 - `Dockerfile.web`: Vite build + Nginx servis image.
 - `nginx.conf`: Frontend ve `/api` reverse proxy ayari.
-- `docker-compose.portainer.yml`: Portainer Stack dosyasi.
+- `docker-compose.yml`: Portainer Stack dosyasi.
 
 Portainer adimlari:
 
@@ -34,8 +34,10 @@ Portainer adimlari:
 2. `.env.example` dosyasini `.env` olarak kopyalayin ve `API_KEY` degerini girin.
 3. Portainer > Stacks > Add stack.
 4. Name: `twitter-search`.
-5. Compose path/content olarak `docker-compose.portainer.yml` kullanin.
+5. Compose path/content olarak `docker-compose.yml` kullanin.
 6. Deploy the stack.
+
+Not: `saved-users.json` artik host'tan tek dosya bind edilmez. Bunun yerine `twitter-search-data` adli Docker volume kullanilir; bu nedenle Portainer'da "file vs directory" mount hatasi alinmaz.
 
 Varsayilan erisim:
 

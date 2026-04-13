@@ -15,7 +15,8 @@ const STALE_CACHE_MAX_AGE_MS = 15 * 60_000
 const RATE_LIMIT_COOLDOWN_MS = 90_000
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const SAVED_USERS_FILE_PATH = path.join(__dirname, 'saved-users.json')
+const SAVED_USERS_FILE_PATH =
+  process.env.SAVED_USERS_FILE_PATH?.trim() || path.join(__dirname, 'saved-users.json')
 
 const snapshotCache = new Map()
 let rateLimitUntil = 0
