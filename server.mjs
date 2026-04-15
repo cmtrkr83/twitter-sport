@@ -19,6 +19,7 @@ const SAVED_USERS_FILE_PATH =
   process.env.SAVED_USERS_FILE_PATH?.trim() || path.join(__dirname, 'saved-users.json')
 
 const snapshotCache = new Map()
+const tCoResolutionCache = new Map()
 let rateLimitUntil = 0
 
 function textValue(value) {
@@ -209,8 +210,101 @@ function hasLink(text) {
   return /https?:\/\/|t\.co\//i.test(text)
 }
 
+function extractResolvedUrls(node) {
+  const rawUrlGroups = [
+    node?.legacy?.entities?.urls,
+    node?.entities?.urls,
+    node?.raw?.legacy?.entities?.urls,
+    node?.raw?.entities?.urls,
+  ]
+
+  const resolvedUrls = []
+
+  for (const rawUrlGroup of rawUrlGroups) {
+    if (!Array.isArray(rawUrlGroup)) {
+      continue
+    }
+
+    for (const rawUrl of rawUrlGroup) {
+      const resolvedUrl = textValue(rawUrl?.expanded_url ?? rawUrl?.expandedUrl ?? rawUrl?.url ?? rawUrl)
+
+      if (resolvedUrl && !/^https?:\/\/t\.co\//i.test(resolvedUrl) && !/^t\.co\//i.test(resolvedUrl)) {
+        resolvedUrls.push(resolvedUrl)
+      }
+    }
+  }
+
+  const uniqueResolvedUrls = Array.from(new Set(resolvedUrls))
+  const broadcastUrls = uniqueResolvedUrls.filter((url) => /broadcasts/i.test(url))
+
+  return broadcastUrls.length > 0 ? broadcastUrls : uniqueResolvedUrls
+}
+
+function extractShortUrlsFromText(text) {
+  const shortUrls = []
+  const urlPattern = /https?:\/\/t\.co\/[A-Za-z0-9]+/gi
+
+  for (const match of text.matchAll(urlPattern)) {
+    shortUrls.push(match[0])
+  }
+
+  return Array.from(new Set(shortUrls))
+}
+
+async function resolveTCoUrl(shortUrl) {
+  const normalizedShortUrl = textValue(shortUrl)
+
+  if (!normalizedShortUrl) {
+    return ''
+  }
+
+  const cachedResolution = tCoResolutionCache.get(normalizedShortUrl)
+  if (cachedResolution) {
+    return cachedResolution
+  }
+
+  try {
+    const response = await fetch(normalizedShortUrl, {
+      method: 'GET',
+      redirect: 'follow',
+    })
+
+    const resolvedUrl = textValue(response.url)
+
+    if (resolvedUrl) {
+      tCoResolutionCache.set(normalizedShortUrl, resolvedUrl)
+      return resolvedUrl
+    }
+  } catch {
+    return ''
+  }
+
+  return ''
+}
+
+async function resolveFallbackResolvedUrls(text) {
+  const shortUrls = extractShortUrlsFromText(text)
+
+  if (shortUrls.length === 0) {
+    return []
+  }
+
+  const resolvedUrls = []
+
+  for (const shortUrl of shortUrls) {
+    const resolvedUrl = await resolveTCoUrl(shortUrl)
+
+    if (resolvedUrl) {
+      resolvedUrls.push(resolvedUrl)
+    }
+  }
+
+  return Array.from(new Set(resolvedUrls))
+}
+
 function mapTweet(node, fallbackUser) {
   const text = extractText(node)
+  const resolvedUrls = extractResolvedUrls(node)
 
   if (!text || !hasLink(text)) {
     return null
@@ -223,6 +317,7 @@ function mapTweet(node, fallbackUser) {
     text,
     createdAt: extractCreatedAt(node),
     hasLink: true,
+    resolvedUrls,
   }
 }
 
@@ -238,10 +333,28 @@ async function fetchRecentTweetsForUser(userName, limit, apiKey) {
   const timeline = await rettiwt.user.timeline(userId, limit)
   const list = Array.isArray(timeline?.list) ? timeline.list : []
 
-  return list
-    .map((item) => mapTweet(item, userName))
-    .filter(Boolean)
-    .slice(0, limit)
+  const mappedTweets = await Promise.all(
+    list.map(async (item) => {
+      const tweet = mapTweet(item, userName)
+
+      if (!tweet) {
+        return null
+      }
+
+      if (tweet.resolvedUrls.length > 0) {
+        return tweet
+      }
+
+      const fallbackResolvedUrls = await resolveFallbackResolvedUrls(tweet.text)
+
+      return {
+        ...tweet,
+        resolvedUrls: fallbackResolvedUrls,
+      }
+    }),
+  )
+
+  return mappedTweets.filter(Boolean).slice(0, limit)
 }
 
 async function fetchTweetsForUsers(users, limit, apiKey) {
