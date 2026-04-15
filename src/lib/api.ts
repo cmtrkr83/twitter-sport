@@ -5,6 +5,7 @@ export interface TweetItem {
   text: string
   createdAt: string
   hasLink: boolean
+  resolvedUrls: string[]
 }
 
 export interface UserTweetGroup {

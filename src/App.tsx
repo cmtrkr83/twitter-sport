@@ -53,6 +53,21 @@ function normalizeLinkToken(rawToken: string): { href: string; text: string; tra
   return { href, text, trailing }
 }
 
+function renderResolvedUrls(urls: string[]): ReactNode[] {
+  return urls.flatMap((url, index) => [
+    <a
+      key={url}
+      className="resolved-url-link"
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {url}
+    </a>,
+    index < urls.length - 1 ? <span key={`${url}-separator`}>•</span> : null,
+  ])
+}
+
 function renderTweetText(value: string): ReactNode[] {
   const nodes: ReactNode[] = []
   let cursor = 0
@@ -422,6 +437,15 @@ function App() {
                               <span>{formatRelativeTime(post.createdAt)}</span>
                             </div>
                             <p>{renderTweetText(post.text)}</p>
+                            {post.resolvedUrls.length > 0 ? (
+                              <div className="resolved-url-block resolved-url-block--links">
+                                <div className="resolved-url-list">{renderResolvedUrls(post.resolvedUrls)}</div>
+                              </div>
+                            ) : (
+                              <div className="resolved-url-block resolved-url-block--fallback">
+                                <span className="resolved-url-fallback">Çözülemedi</span>
+                              </div>
+                            )}
                           </article>
                         )
                       })

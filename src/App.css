@@ -744,6 +744,59 @@
   color: #a5f3fc;
 }
 
+.resolved-url-block {
+  display: flex;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.resolved-url-block--links {
+  justify-content: flex-start;
+}
+
+.resolved-url-block--fallback {
+  justify-content: flex-end;
+}
+
+.resolved-url-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.resolved-url-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(253, 230, 138, 0.24);
+  background: rgba(253, 230, 138, 0.08);
+  color: #fde68a;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.resolved-url-link:hover {
+  background: rgba(253, 230, 138, 0.14);
+  border-color: rgba(253, 230, 138, 0.34);
+  color: #fef3c7;
+}
+
+.resolved-url-fallback {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 29, 29, 0.35);
+  background: rgba(127, 29, 29, 0.92);
+  color: #ffffff;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
 .empty-carousel-card {
   min-width: 280px;
 }
